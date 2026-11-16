@@ -10,6 +10,7 @@
   --color-go: #6aa57a;
   --color-caution: #ffd60a;
   --color-stop: #c4564b;
+  --font-sign: var(--font-overpass), ui-sans-serif, sans-serif;
 }
 
 html {
