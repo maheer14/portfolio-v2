@@ -1,7 +1,14 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { Overpass } from "next/font/google";
 import "./globals.css";
 import SmoothScroll from "@/components/SmoothScroll";
+
+const overpass = Overpass({
+  subsets: ["latin"],
+  weight: ["700", "800"],
+  variable: "--font-overpass",
+});
 
 const chillax = localFont({
   src: "../fonts/Chillax-Variable.woff2",
@@ -19,8 +26,8 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={chillax.variable}>
-      <body className="bg-asphalt font-sans text-paper antialiased">
+    <html lang="en" className={`${chillax.variable} ${overpass.variable}`}>
+      <body className="bg-ink font-sans text-paper antialiased">
         <SmoothScroll />
         {children}
       </body>

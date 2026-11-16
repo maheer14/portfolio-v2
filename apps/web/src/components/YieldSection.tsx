@@ -58,12 +58,13 @@ export default function YieldSection() {
               <svg viewBox="0 0 100 90" className="w-full overflow-visible" role="img" aria-label="Yield sign">
                 <motion.polygon points={TRI} fill="#ffd60a" style={{ opacity: fill }} />
                 <motion.polygon
-                  points={TRI}
-                  fill="none"
-                  stroke="#f2f1ec"
-                  strokeWidth="3"
-                  strokeLinejoin="round"
-                  style={{ pathLength: outline }}
+                    points={TRI}
+                    fill="none"
+                    stroke="#f2f1ec"
+                    strokeWidth="3"
+                    strokeLinejoin="round"
+                    strokeLinecap="round"
+                    style={{ pathLength: outline }}
                 />
                 <motion.g style={{ opacity: text }}>
                   <polygon points={TRI_INNER} fill="none" stroke="#0b0b0a" strokeWidth="2.5" strokeLinejoin="round" />
@@ -74,7 +75,7 @@ export default function YieldSection() {
                     fontSize="10"
                     fontWeight="700"
                     fill="#0b0b0a"
-                    className="font-sans"
+                    className="font-sign"
                     style={{ letterSpacing: "0.06em" }}
                   >
                     YIELD
