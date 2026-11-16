@@ -11,7 +11,7 @@ export default function Hero() {
     target: ref,
     offset: ["start start", "end start"],
   });
-  const x = useTransform(scrollYProgress, [0, 1], reduce ? ["0vw", "0vw"] : ["0vw", "-14vw"]);
+  const x = useTransform(scrollYProgress, [0, 1], reduce ? ["0vw", "0vw"] : ["0vw", "-8vw"]);
 
   return (
     <section ref={ref} className="relative h-screen overflow-hidden bg-signal text-ink">
@@ -22,7 +22,7 @@ export default function Hero() {
       </div>
 
       <motion.div style={{ x }} className="absolute top-1/2 left-[4vw] -translate-y-1/2">
-        <h1 className="text-[clamp(4rem,15vw,22rem)] leading-[0.8] font-black tracking-tighter uppercase [font-stretch:125%]">
+        <h1 className="text-[clamp(3rem,11vw,16rem)] leading-[0.8] font-black tracking-tighter uppercase [font-stretch:125%]">
           Gridlock
         </h1>
         <p className="mt-6 max-w-md text-lg font-medium sm:text-xl">

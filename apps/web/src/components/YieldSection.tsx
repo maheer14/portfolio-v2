@@ -39,7 +39,7 @@ export default function YieldSection() {
   const exitY = useMap([0.85, 1], [0, -60], 0);
 
   return (
-    <section ref={ref} className="relative h-[320vh] bg-ink text-paper">
+    <section ref={ref} className="relative h-[320vh] bg-black text-signal">
       <div className="sticky top-0 h-screen overflow-hidden">
         <motion.div
           style={{ opacity: exit, y: exitY }}
@@ -49,7 +49,7 @@ export default function YieldSection() {
           <div className="relative h-full">
             <motion.div
               style={{ scaleY: pole, originY: 1 }}
-              className="absolute bottom-0 left-1/2 h-[82vh] w-[1.4vmin] -translate-x-1/2 bg-slate"
+              className="absolute bottom-0 left-1/2 h-[82vh] w-[1.4vmin] -translate-x-1/2 bg-signal"
             />
             <motion.div
               style={{ scale: headScale }}
@@ -60,7 +60,7 @@ export default function YieldSection() {
                 <motion.polygon
                     points={TRI}
                     fill="none"
-                    stroke="#f2f1ec"
+                    stroke="#ffd60a"
                     strokeWidth="3"
                     strokeLinejoin="round"
                     strokeLinecap="round"
@@ -90,13 +90,13 @@ export default function YieldSection() {
             style={{ opacity: copy, y: copyY }}
             className="flex h-full flex-col justify-center px-[6vw]"
           >
-            <p className="text-xs tracking-[0.35em] text-slate uppercase">01 / Yield</p>
+            <p className="text-xs tracking-[0.35em] text-signal/70 uppercase">01 / Yield</p>
             <h2 className="mt-4 text-[clamp(2.5rem,6vw,6rem)] leading-[0.9] font-bold tracking-tight uppercase">
               Slow down.
               <br />
-              <span className="text-signal">Look first.</span>
+              <span className="text-transparent [-webkit-text-stroke:2px_#ffd60a]">Look first.</span>
             </h2>
-            <p className="mt-6 max-w-md text-slate">
+            <p className="mt-6 max-w-md text-signal/70">
               Placeholder copy. This is where the first idea of the project gets
               introduced before you move on.
             </p>
