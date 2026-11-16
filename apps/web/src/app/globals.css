@@ -3,10 +3,22 @@
 @theme inline {
   --font-sans: var(--font-chillax), ui-sans-serif, system-ui, sans-serif;
 
-  --color-ink: #0a0a0a;
-  --color-paper: #f7f7f2;
-  --color-signal: #ffb800;
-  --color-go: #22c55e;
-  --color-caution: #ffb800;
-  --color-stop: #ff3b30;
+  --color-ink: #0b0b0a;
+  --color-paper: #f2f1ec;
+  --color-signal: #ffd60a;
+  --color-slate: #8b8b86;
+  --color-go: #6aa57a;
+  --color-caution: #ffd60a;
+  --color-stop: #c4564b;
+}
+
+html {
+  color-scheme: dark;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

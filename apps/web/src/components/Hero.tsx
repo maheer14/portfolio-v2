@@ -11,10 +11,12 @@ import {
 } from "motion/react";
 import clsx from "clsx";
 
-// Clip path covering one side of a line through the screen center.
+const PIVOT = { x: 62, y: 44 }; // off-center seam pivot, in %
+
+// Clip path covering one side of a line through PIVOT at `deg`.
 function halfPlane(deg: number, side: 1 | -1) {
   const r = (deg * Math.PI) / 180;
-  const L = 150; // vmax, far enough to cover any screen
+  const L = 160; // vmax, far enough to cover any screen
   const dx = Math.cos(r) * L;
   const dy = Math.sin(r) * L;
   const nx = -Math.sin(r) * L * side;
@@ -26,7 +28,10 @@ function halfPlane(deg: number, side: 1 | -1) {
     [dx + nx, dy + ny],
   ];
   const p = pts
-    .map(([x, y]) => `calc(50% + ${x.toFixed(2)}vmax) calc(50% + ${y.toFixed(2)}vmax)`)
+    .map(
+      ([x, y]) =>
+        `calc(${PIVOT.x}% + ${x.toFixed(2)}vmax) calc(${PIVOT.y}% + ${y.toFixed(2)}vmax)`,
+    )
     .join(",");
   return `polygon(${p})`;
 }
@@ -41,7 +46,7 @@ function Layer({
   hidden?: boolean;
 }) {
   const dark = tone === "dark";
-  const Heading = hidden ? "div" : "h1";
+  const Title = hidden ? "div" : "h1";
 
   return (
     <motion.div
@@ -52,38 +57,31 @@ function Layer({
         dark ? "bg-ink text-paper" : "bg-paper text-ink",
       )}
     >
-      <div className="absolute top-[12vh] left-[6vw]">
-        <p className="text-xs tracking-[0.35em] uppercase sm:text-sm">
-          Signal timing, explorable
-        </p>
-        <Heading className="mt-4 text-[21vw] leading-[0.78] font-bold tracking-tighter uppercase">
-          Grid
-          <br />
-          <span
-            className={clsx(
-              "ml-[16vw] text-signal",
-              !dark && "[-webkit-text-stroke:3px_#0a0a0a]",
-            )}
-          >
-            Lock
-          </span>
-        </Heading>
-      </div>
-
-      <div className="absolute right-[8vw] bottom-[10vh] flex gap-4">
+      <div className="absolute top-[8vh] left-[4vw] flex gap-3">
         {["bg-go", "bg-caution", "bg-stop"].map((c) => (
           <span
             key={c}
             className={clsx(
-              "size-[clamp(1.5rem,4vw,3.5rem)] rounded-full ring-4",
+              "size-3 rounded-full ring-1 sm:size-4",
               c,
-              dark ? "ring-paper/20" : "ring-ink",
+              dark ? "ring-slate/60" : "ring-slate",
             )}
           />
         ))}
       </div>
 
-      <p className="absolute bottom-[10vh] left-[6vw] text-xs tracking-[0.35em] uppercase">
+      {/* wordmark: one word, middle-left, huge */}
+      <div className="absolute top-1/2 left-[4vw] -translate-y-1/2">
+        <p className="mb-4 text-[0.65rem] tracking-[0.35em] text-slate uppercase sm:text-xs">
+          Signal timing, explorable
+        </p>
+        <Title className="text-[clamp(4rem,16vw,22rem)] leading-[0.8] font-bold tracking-tighter uppercase">
+          Grid
+          <span className={dark ? "text-signal" : "text-slate"}>Lock</span>
+        </Title>
+      </div>
+
+      <p className="absolute right-[4vw] bottom-[8vh] text-[0.65rem] tracking-[0.35em] text-slate uppercase sm:text-xs">
         Scroll ↓
       </p>
     </motion.div>
@@ -99,7 +97,7 @@ export default function Hero() {
     offset: ["start start", "end end"],
   });
 
-  const raw = useTransform(scrollYProgress, [0, 1], reduce ? [28, 28] : [28, 118]);
+  const raw = useTransform(scrollYProgress, [0, 1], reduce ? [24, 24] : [24, 114]);
   const angle = useSpring(raw, { stiffness: 80, damping: 24, mass: 0.6 });
 
   const clipDark = useTransform(angle, (a) => halfPlane(a, 1));
@@ -111,8 +109,14 @@ export default function Hero() {
         <Layer tone="dark" clip={clipDark} />
         <Layer tone="light" clip={clipLight} hidden />
         <motion.div
-          style={{ x: "-50%", y: "-50%", rotate: angle }}
-          className="pointer-events-none absolute top-1/2 left-1/2 h-[6px] w-[300vmax] bg-signal"
+          style={{
+            left: `${PIVOT.x}%`,
+            top: `${PIVOT.y}%`,
+            x: "-50%",
+            y: "-50%",
+            rotate: angle,
+          }}
+          className="pointer-events-none absolute h-[2px] w-[320vmax] bg-signal"
         />
       </div>
     </div>
