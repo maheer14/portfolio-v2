@@ -13,6 +13,14 @@
   --font-sign: var(--font-overpass), ui-sans-serif, sans-serif;
 }
 
+@layer base {
+  button:not(:disabled),
+  [role="button"],
+  input[type="range"] {
+    cursor: pointer;
+  }
+}
+
 html {
   color-scheme: dark;
 }

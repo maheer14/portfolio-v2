@@ -26,7 +26,7 @@ export interface Snapshot {
   queues: number[]; // stopped cars per approach
 }
 
-export const GEOM = { L: 90, stop: -8, carLen: 4.5, carW: 2, laneOff: 3.2 };
+export const GEOM = { L: 80, stop: -8, carLen: 4.5, carW: 2, laneOff: 3.2 };
 
 // Intelligent Driver Model parameters
 const V0 = 13.9; // desired speed (m/s)

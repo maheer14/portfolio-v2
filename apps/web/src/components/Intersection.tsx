@@ -17,7 +17,7 @@ const COLORS: Record<Phase, string> = {
   red: "#c4564b",
 };
 const DIM = "#2a2a28";
-const VIEW = 62;
+const VIEW = 82;
 const HALF_ROAD = GEOM.laneOff + 3;
 const AMBER = 3;
 const ALL_RED = 2;
@@ -45,12 +45,10 @@ function draw(
   const k = Math.min(w, h) / (2 * VIEW);
   g.scale(k, k);
 
-  // roads
   g.fillStyle = "#1b1b1a";
   g.fillRect(-HALF_ROAD, -VIEW, HALF_ROAD * 2, VIEW * 2);
   g.fillRect(-VIEW, -HALF_ROAD, VIEW * 2, HALF_ROAD * 2);
 
-  // muted center lines, so they don't compete with the cars
   g.strokeStyle = "#5c5c56";
   g.lineWidth = 0.25;
   g.setLineDash([2, 2.5]);
@@ -65,11 +63,11 @@ function draw(
   for (let a = 0; a < 4; a++) {
     const phase = a % 2 === 0 ? snap.ns : snap.ew;
 
-    // stop bar
+    // neutral stop bar: color lives only on the signal heads
     const p1 = toWorld(a, GEOM.stop, 0.3);
     const p2 = toWorld(a, GEOM.stop, HALF_ROAD - 0.3);
-    g.strokeStyle = COLORS[phase];
-    g.lineWidth = 0.9;
+    g.strokeStyle = "rgba(242,241,236,0.5)";
+    g.lineWidth = 0.7;
     g.beginPath();
     g.moveTo(p1.x, p1.y);
     g.lineTo(p2.x, p2.y);
@@ -92,25 +90,22 @@ function draw(
       g.fill();
     });
 
-    // road label + queue count
-    const lab = toWorld(a, -VIEW + 7, HALF_ROAD + 9);
+    const lab = toWorld(a, -VIEW + 9, HALF_ROAD + 10);
     g.textAlign = "center";
     g.textBaseline = "middle";
     g.fillStyle = "#ffd60a";
-    g.font = `800 4px ${family}`;
-    g.fillText(NAMES[a], lab.x, lab.y - 2);
+    g.font = `800 5px ${family}`;
+    g.fillText(NAMES[a], lab.x, lab.y - 2.5);
     g.fillStyle = snap.queues[a] > 0 ? "#f2f1ec" : "#5c5c56";
-    g.font = `500 2.6px ${family}`;
-    g.fillText(`${snap.queues[a]} waiting`, lab.x, lab.y + 2);
+    g.font = `500 3.4px ${family}`;
+    g.fillText(`${snap.queues[a]} waiting`, lab.x, lab.y + 2.5);
   }
 
-  // cars: yellow while moving, white while stopped. Positions are estimated
-  // forward from the last snapshot so motion stays smooth between steps.
   for (const c of snap.cars) {
     const pos = c.p + c.v * ahead;
     const mid = toWorld(c.a, pos - GEOM.carLen / 2, GEOM.laneOff);
     const len = GEOM.carLen;
-    const wid = 2.6;
+    const wid = 3.2;
     g.save();
     g.translate(mid.x, mid.y);
     g.rotate(HEADING[c.a]);
@@ -125,8 +120,35 @@ function draw(
   g.restore();
 }
 
+const fmt = (d: number) => {
+  const v = Math.min(d, 999);
+  return v >= 100 ? v.toFixed(0) : v.toFixed(1);
+};
+
+function Axis({ vertical }: { vertical: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      className="size-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      {vertical ? (
+        <path d="M8 2v12M4 5l4-3 4 3M4 11l4 3 4-3" />
+      ) : (
+        <path d="M2 8h12M5 4L2 8l3 4M11 4l3 4-3 4" />
+      )}
+    </svg>
+  );
+}
+
 function Slider({
   label,
+  vertical,
   value,
   min,
   max,
@@ -134,22 +156,53 @@ function Slider({
   onChange,
 }: {
   label: string;
+  vertical: boolean;
   value: number;
   min: number;
   max: number;
   unit: string;
   onChange: (v: number) => void;
 }) {
+  const ref = useRef<HTMLInputElement>(null);
+  const acc = useRef(0);
+  const latest = useRef({ value, min, max, onChange });
+  useEffect(() => {
+    latest.current = { value, min, max, onChange };
+  });
+
+  // Wheel adjusts the slider only while it is focused (click it first),
+  // so scrolling past the sliders never gets trapped.
+  useEffect(() => {
+    const el = ref.current!;
+    const onWheel = (e: WheelEvent) => {
+      if (document.activeElement !== el) return;
+      e.preventDefault();
+      acc.current += e.deltaY;
+      if (Math.abs(acc.current) < 40) return;
+      const dir = acc.current < 0 ? 1 : -1;
+      acc.current = 0;
+      const l = latest.current;
+      l.onChange(Math.max(l.min, Math.min(l.max, l.value + dir)));
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, []);
+
   return (
     <label className="block">
-      <div className="flex justify-between text-xs tracking-[0.25em] uppercase">
-        <span className="text-signal/70">{label}</span>
-        <span>
+      <div className="flex items-center justify-between text-xs tracking-[0.25em] uppercase">
+        <span className="flex items-center gap-2 text-signal/70">
+          <Axis vertical={vertical} />
+          {label}
+        </span>
+        <span className="[font-variant-numeric:tabular-nums]">
           {value}
           {unit}
         </span>
       </div>
       <input
+        ref={ref}
+        data-lenis-prevent
         type="range"
         min={min}
         max={max}
@@ -161,10 +214,32 @@ function Slider({
   );
 }
 
-const fmt = (d: number) => {
-  const v = Math.min(d, 999);
-  return v >= 100 ? v.toFixed(0) : v.toFixed(1);
-};
+function Bar({
+  label,
+  value,
+  max,
+  solid,
+}: {
+  label: string;
+  value: number;
+  max: number;
+  solid?: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="w-20 text-xs tracking-[0.25em] text-signal/70 uppercase">{label}</span>
+      <div className="h-3 flex-1 bg-signal/10">
+        <div
+          className={`h-full transition-[width] duration-500 ${solid ? "bg-signal" : "bg-signal/40"}`}
+          style={{ width: `${Math.max(2, (value / max) * 100)}%` }}
+        />
+      </div>
+      <span className="w-16 text-right text-lg font-black [font-variant-numeric:tabular-nums]">
+        {fmt(value)}s
+      </span>
+    </div>
+  );
+}
 
 export default function Intersection() {
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -190,10 +265,9 @@ export default function Intersection() {
     return { best, mine, opt };
   }, [nsGreen, ewGreen, demandNs, demandEw]);
 
-  const saving =
-    test.mine.avgDelay > test.opt.avgDelay * 1.03
-      ? Math.round((1 - test.opt.avgDelay / test.mine.avgDelay) * 100)
-      : 0;
+  const samePlan = nsGreen === test.best.nsGreen && ewGreen === test.best.ewGreen;
+  const ahead = !samePlan && test.mine.avgDelay < test.opt.avgDelay * 0.97;
+  const maxD = Math.max(test.mine.avgDelay, test.opt.avgDelay, 1);
 
   useEffect(() => {
     const canvas = canvasRef.current!;
@@ -257,30 +331,24 @@ export default function Intersection() {
     setDemandNs(ns);
     setDemandEw(ew);
   };
-  const cycle = nsGreen + ewGreen + 2 * (AMBER + ALL_RED);
+
   const bigNum =
     "text-[clamp(3.5rem,7.5vw,8rem)] leading-[0.85] font-black tracking-tighter whitespace-nowrap [font-stretch:125%] [font-variant-numeric:tabular-nums]";
   const btn = "border border-signal/40 px-3 py-1 text-xs tracking-[0.2em] uppercase";
 
   return (
-    <section className="grid min-h-screen grid-cols-1 items-center gap-[4vw] bg-black p-[4vw] text-signal md:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
-      <div ref={wrapRef} className="relative aspect-square max-h-[88vh] w-full min-w-0 self-center">
+    <section className="grid min-h-screen grid-cols-1 items-center gap-[4vw] bg-black p-[3vw] text-signal md:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
+      <div ref={wrapRef} className="relative aspect-square max-h-[92vh] w-full min-w-0 self-center">
         <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
       </div>
 
       <div className="flex min-w-0 flex-col gap-6">
-        <div>
-          <h2 className="text-[clamp(2rem,4vw,4.25rem)] leading-[0.9] font-black tracking-tighter uppercase [font-stretch:125%]">
-            You run the lights.
-          </h2>
-          <p className="mt-3 max-w-md text-sm text-signal/80">
-            Cars arrive at random from all four roads. Give each road a green and the clock does the
-            rest. Goal: the shortest average wait.
-          </p>
-        </div>
+        <h2 className="text-[clamp(2rem,4vw,4.25rem)] leading-[0.9] font-black tracking-tighter uppercase [font-stretch:125%]">
+          You run the lights.
+        </h2>
 
         <div>
-          <p className="text-xs tracking-[0.35em] text-signal/70 uppercase">Live average wait</p>
+          <p className="text-xs tracking-[0.35em] text-signal/70 uppercase">Avg wait</p>
           <div className="relative overflow-hidden">
             <p className={`${bigNum} invisible`} aria-hidden>
               888.8<span className="text-[0.3em]">s</span>
@@ -293,55 +361,46 @@ export default function Intersection() {
           <p className="text-xs text-signal/70">{stats.done} cars through</p>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 border-y border-signal/30 py-4">
-          <div>
-            <p className="text-xs tracking-[0.25em] text-signal/70 uppercase">Your plan, 10-min test</p>
-            <p className="text-3xl font-black [font-variant-numeric:tabular-nums]">
-              {fmt(test.mine.avgDelay)}s
-            </p>
-          </div>
-          <div>
-            <p className="text-xs tracking-[0.25em] text-signal/70 uppercase">Webster formula</p>
-            <p className="text-3xl font-black [font-variant-numeric:tabular-nums]">
-              {fmt(test.opt.avgDelay)}s
-            </p>
-            <p className="text-xs text-signal/70">
-              N–S {test.best.nsGreen}s · E–W {test.best.ewGreen}s
-            </p>
-          </div>
-          <p className="col-span-2 text-sm">
-            {saving > 0
-              ? `Webster's timing would cut waits by about ${saving}%.`
-              : "You match or beat the formula."}{" "}
-            <button
-              className="underline underline-offset-4"
-              onClick={() => {
-                setNsGreen(test.best.nsGreen);
-                setEwGreen(test.best.ewGreen);
-              }}
-            >
-              Use it
-            </button>
-          </p>
+        <div className="space-y-2 border-y border-signal/30 py-4">
+          <Bar label="You" value={test.mine.avgDelay} max={maxD} solid />
+          <Bar label="Textbook" value={test.opt.avgDelay} max={maxD} />
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs tracking-[0.2em] uppercase">
+            <span className="text-signal/70">
+                Textbook: N–S {test.best.nsGreen}s · E–W {test.best.ewGreen}s
+            </span>
+            {samePlan ? (
+                <span>Using textbook timing</span>
+            ) : ahead ? (
+                <span>You beat the textbook</span>
+            ) : (
+                <button
+                className="underline underline-offset-4"
+                onClick={() => {
+                    setNsGreen(test.best.nsGreen);
+                    setEwGreen(test.best.ewGreen);
+                }}
+                >
+                Set greens to {test.best.nsGreen}s / {test.best.ewGreen}s
+                </button>
+            )}
+            </div>
         </div>
 
         <div className="space-y-3">
-          <Slider label="N–S green" value={nsGreen} min={5} max={60} unit="s" onChange={setNsGreen} />
-          <Slider label="E–W green" value={ewGreen} min={5} max={60} unit="s" onChange={setEwGreen} />
-          <Slider label="N–S traffic" value={demandNs} min={2} max={30} unit="/min" onChange={setDemandNs} />
-          <Slider label="E–W traffic" value={demandEw} min={2} max={30} unit="/min" onChange={setDemandEw} />
+          <Slider label="Green" vertical value={nsGreen} min={5} max={60} unit="s" onChange={setNsGreen} />
+          <Slider label="Green" vertical={false} value={ewGreen} min={5} max={60} unit="s" onChange={setEwGreen} />
+          <Slider label="Traffic" vertical value={demandNs} min={2} max={30} unit="/min" onChange={setDemandNs} />
+          <Slider label="Traffic" vertical={false} value={demandEw} min={2} max={30} unit="/min" onChange={setDemandEw} />
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs tracking-[0.25em] text-signal/70 uppercase">Try</span>
           <button className={btn} onClick={() => preset(12, 12)}>Balanced</button>
           <button className={btn} onClick={() => preset(26, 6)}>Rush hour</button>
           <button className={btn} onClick={() => preset(6, 22)}>Side street</button>
-          <button className={btn} onClick={() => preset(3, 3)}>Quiet night</button>
+          <button className={btn} onClick={() => preset(3, 3)}>Quiet</button>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 text-xs tracking-[0.25em] uppercase">
-          <span className="text-signal/70">Cycle {cycle}s · Speed</span>
           {[1, 4, 8].map((s) => (
             <button
               key={s}
